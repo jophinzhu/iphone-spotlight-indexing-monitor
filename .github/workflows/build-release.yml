@@ -30,14 +30,14 @@ jobs:
         run: echo "" | dist\spotlight-monitor.exe --version
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: spotlight-monitor-windows
           path: dist/spotlight-monitor.exe
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/spotlight-monitor.exe
           generate_release_notes: true
