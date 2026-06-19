@@ -29,8 +29,9 @@ if __name__ == "__main__":
     except Exception:
         traceback.print_exc()
     finally:
-        if _is_frozen():
+        if _is_frozen() and sys.stdin and sys.stdin.isatty():
             # Keep the console window open so the user can read output when
-            # the .exe is launched by double-clicking.
+            # the .exe is launched by double-clicking. Skip when running
+            # non-interactively (e.g., CI pipelines).
             input("\nPress Enter to exit...")
     raise SystemExit(code)
