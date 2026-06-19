@@ -7,6 +7,7 @@ replacing the Mac-only Console.app workflow.
 
 ## Requirements
 
+- iTunes
 - Python 3.11+
 - [libimobiledevice](https://libimobiledevice.org/) executables on `PATH`
   (`idevice_id`, `ideviceinfo`, `idevicesyslog`) and a working USB driver.
