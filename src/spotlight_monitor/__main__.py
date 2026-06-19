@@ -5,7 +5,32 @@ Also serves as a convenient single-file target for PyInstaller builds.
 
 from __future__ import annotations
 
-from .cli import main
+import sys
+import traceback
+
+
+def _is_frozen() -> bool:
+    """Return True when running as a PyInstaller bundle."""
+    return getattr(sys, "frozen", False)
+
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    code = 1
+    try:
+        if _is_frozen():
+            # PyInstaller treats this as a top-level script, so relative
+            # imports won't work. Use absolute import instead.
+            from spotlight_monitor.cli import main
+        else:
+            from .cli import main  # type: ignore[no-redef]
+        code = main()
+    except KeyboardInterrupt:
+        code = 0
+    except Exception:
+        traceback.print_exc()
+    finally:
+        if _is_frozen():
+            # Keep the console window open so the user can read output when
+            # the .exe is launched by double-clicking.
+            input("\nPress Enter to exit...")
+    raise SystemExit(code)
