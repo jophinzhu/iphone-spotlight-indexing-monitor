@@ -38,6 +38,7 @@ Requirements: 1.2, 1.5, 4.3, 4.4, 4.5, 6.2, 6.5.
 from __future__ import annotations
 
 import sys
+from datetime import datetime
 from typing import TextIO
 
 from .models import DeviceInfo, IndexingProgress, RawLogLine
@@ -81,88 +82,57 @@ class OutputDisplay:
     # -- device list (1.2, 1.5) -------------------------------------------
 
     def show_devices(self, devices: list[DeviceInfo]) -> None:
-        """Render the list of detected devices, one per line (1.2, 1.5).
-
-        Each device is prefixed with a 0-based index so the user can select a
-        target device when multiple are connected (Req 1.5). For every device
-        the UDID, name (``<unknown>`` when not available) and state are shown.
-        When the list is empty a single placeholder line is rendered.
-        """
+        """Render the list of detected devices on a single line (1.2, 1.5)."""
         if not devices:
-            self._writeln("未检测到已连接的 iOS 设备。")
+            self._writeln(self._fmt("未检测到已连接的 iOS 设备。"))
             return
 
-        self._writeln("检测到的设备：")
-        for index, device in enumerate(devices):
-            name = device.name if device.name else "<unknown>"
-            self._writeln(
-                f"  [{index}] {device.udid}  {name}  ({device.state.value})"
-            )
+        names = ", ".join(
+            (d.name if d.name else d.udid) for d in devices
+        )
+        self._writeln(self._fmt(f"检测到的设备：{names}"))
 
     # -- log lines (3.2, 4.5) ---------------------------------------------
 
     def show_log_line(self, line: RawLogLine) -> None:
-        """Render a filtered log line with its local receive timestamp (4.5).
-
-        The line is rendered as ``{received_at_isoformat}  {text}`` so every
-        displayed line carries the timestamp at which it was received locally
-        (Req 4.5). Rendered as a normal scrolling line above the progress area.
-        """
-        self._writeln(f"{line.received_at.isoformat()}  {line.text}")
+        """Render a filtered log line (4.5)."""
+        self._writeln(self._fmt(line.text, ts=line.received_at))
 
     # -- progress (4.3, 4.4) ----------------------------------------------
 
     def update_progress(self, progress: IndexingProgress) -> None:
-        """Store ``progress`` as the latest and render it in place (4.3, 4.4).
-
-        The supplied progress becomes the new "latest successfully parsed"
-        progress (observable via :attr:`last_progress`) and is rendered to the
-        progress area. Because parsing only calls this on a successful parse,
-        the stored value always reflects the last successful extraction.
-        """
+        """Store ``progress`` as the latest and render it (4.3, 4.4)."""
         self._last_progress = progress
-        self._render_progress(progress)
+        self._writeln(self._fmt(
+            f"索引进度：{progress.percent:.1f}%", ts=progress.observed_at
+        ))
 
     def redraw_progress(self) -> None:
-        """Re-render the last parsed progress, if any (4.4).
-
-        Used when no new progress has been parsed but the progress area should
-        continue to display the most recent progress together with its
-        ``observed_at`` timestamp. Does nothing when no progress has been parsed
-        yet, so nothing is shown before the first successful parse.
-        """
+        """Re-render the last parsed progress, if any (4.4)."""
         if self._last_progress is not None:
-            self._render_progress(self._last_progress)
-
-    def _render_progress(self, progress: IndexingProgress) -> None:
-        """Write the progress line in place (leading CR, no trailing newline).
-
-        Includes the normalized percent and the ``observed_at`` timestamp so a
-        held (un-refreshed) progress still shows when it was last observed
-        (Req 4.4).
-        """
-        text = (
-            f"\r索引进度: {progress.percent:.1f}% "
-            f"(更新于 {progress.observed_at.isoformat()})"
-        )
-        self._stream.write(text)
-        self._stream.flush()
+            self.update_progress(self._last_progress)
 
     # -- notices and errors (1.3, 1.4, 6.2, 6.5 / 6.3) --------------------
 
     def show_notice(self, message: str) -> None:
-        """Render an informational notice on its own line (1.3, 1.4, 6.2, 6.5)."""
-        self._writeln(message)
+        """Render an informational notice on its own line."""
+        self._writeln(self._fmt(message))
 
     def show_error(self, message: str) -> None:
-        """Render an error message on its own line (6.3).
-
-        Prefixed with ``错误:`` so errors are visually distinguishable from
-        ordinary notices and log lines.
-        """
-        self._writeln(f"错误: {message}")
+        """Render an error message on its own line (6.3)."""
+        self._writeln(self._fmt(f"错误: {message}"))
 
     # -- internal helpers --------------------------------------------------
+
+    @staticmethod
+    def _fmt(message: str, *, ts: datetime | None = None) -> str:
+        """Format a message with a bracketed timestamp prefix.
+
+        Output pattern: [yyyy年MM月dd日 HH:mm:ss] <message>
+        """
+        timestamp = ts if ts is not None else datetime.now()
+        prefix = timestamp.strftime("%Y年%m月%d日 %H:%M:%S")
+        return f"[{prefix}] {message}"
 
     def _writeln(self, text: str) -> None:
         """Write ``text`` followed by a newline to the output stream and flush."""

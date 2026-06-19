@@ -101,12 +101,12 @@ def test_property_7_cross_stage_timestamp_preservation(
             assert progress.observed_at == line.received_at
 
     # -- Stage 3: Display ---------------------------------------------------
-    # show_log_line must render the line's timestamp verbatim (not altered).
+    # show_log_line must render the line's timestamp (not altered).
     for line in lines:
         stream = io.StringIO()
         OutputDisplay(stream=stream).show_log_line(line)
         rendered = stream.getvalue()
-        assert line.received_at.isoformat() in rendered
+        assert line.received_at.strftime("%H:%M:%S") in rendered
 
     # -- Stage 4: Disk writing ----------------------------------------------
     # Write all lines, read them back, and confirm received_at (and order) hold.

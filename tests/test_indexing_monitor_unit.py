@@ -172,7 +172,7 @@ def test_show_error_renders_process_exited_reason() -> None:
 
     output = stream.getvalue()
     # Rendered as an error (distinct prefix) carrying the exit reason.
-    assert output.startswith("错误:")
+    assert "错误:" in output
     assert "异常退出" in output
     assert "退出码 1" in output
 

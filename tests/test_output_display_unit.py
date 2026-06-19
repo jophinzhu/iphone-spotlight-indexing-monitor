@@ -153,13 +153,13 @@ def test_update_progress_renders_percent_and_sets_last_progress() -> None:
     # Percent is rendered with one decimal place ("42.0%").
     assert "42.0%" in output
     # The observed_at timestamp is included so a held progress shows its time.
-    assert progress.observed_at.isoformat() in output
+    assert "03:04:05" in output
     # The passed progress becomes the observable "latest" progress.
     assert display.last_progress is progress
 
 
 def test_update_progress_renders_in_place_with_leading_cr() -> None:
-    """Progress is rendered in place (leading CR, no trailing newline) (4.3)."""
+    """Progress is rendered as a normal line with the standard format (4.3)."""
     display, stream = _make_display()
     progress = IndexingProgress(
         percent=7.5,
@@ -170,9 +170,8 @@ def test_update_progress_renders_in_place_with_leading_cr() -> None:
     display.update_progress(progress)
 
     output = stream.getvalue()
-    assert output.startswith("\r")
-    assert not output.endswith("\n")
     assert "7.5%" in output
+    assert output.endswith("\n")
 
 
 def test_update_progress_latest_wins() -> None:
@@ -207,7 +206,7 @@ def test_show_log_line_includes_timestamp_and_text() -> None:
     display.show_log_line(line)
 
     output = stream.getvalue()
-    assert line.received_at.isoformat() in output
+    assert "05:06:07" in output
     assert "corespotlight progress 50%" in output
 
 
@@ -218,5 +217,5 @@ def test_show_error_is_prefixed() -> None:
     display.show_error("设备已断开")
 
     output = stream.getvalue()
-    assert output.startswith("错误:")
+    assert "错误:" in output
     assert "设备已断开" in output

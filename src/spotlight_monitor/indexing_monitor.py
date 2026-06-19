@@ -83,9 +83,9 @@ DEFAULT_REQUIRED_EXECUTABLES: tuple[str, ...] = (
     "idevicesyslog",
 )
 
-# Default path for the local diagnostic log file (Req 6.4). Relative to the
-# current working directory so the tool works without elevated permissions.
-DEFAULT_DIAGNOSTIC_LOG: Path = Path("spotlight_monitor_diagnostic.log")
+# Default path for the local diagnostic log file (Req 6.4). Set to None to
+# disable diagnostic logging by default. Users can enable it via CLI flag.
+DEFAULT_DIAGNOSTIC_LOG: Path | None = None
 
 # Per-executable fix guidance appended to the "missing dependency" message so
 # the user knows exactly how to resolve it (Req 6.2).
@@ -141,7 +141,7 @@ class IndexingMonitor:
         config: AppConfig | None = None,
         *,
         required_executables: tuple[str, ...] = DEFAULT_REQUIRED_EXECUTABLES,
-        diagnostic_log_path: Path | str = DEFAULT_DIAGNOSTIC_LOG,
+        diagnostic_log_path: Path | str | None = DEFAULT_DIAGNOSTIC_LOG,
         which: Callable[[str], str | None] = shutil.which,
         device_connector: DeviceConnector | None = None,
         log_streamer: LogStreamer | None = None,
@@ -181,7 +181,7 @@ class IndexingMonitor:
         """
         self._config = config
         self._required_executables = tuple(required_executables)
-        self._diagnostic_log_path = Path(diagnostic_log_path)
+        self._diagnostic_log_path: Path | None = Path(diagnostic_log_path) if diagnostic_log_path else None
         self._which = which
 
         # Injected collaborators (constructed lazily in ``run`` when omitted so
@@ -255,11 +255,17 @@ class IndexingMonitor:
         crash. The method is callable as ``log_diagnostic(detail)``; an optional
         ``category`` may be supplied to classify the record.
 
+        When no diagnostic log path is configured (the default), this method is
+        a no-op.
+
         Args:
             detail: The error detail / message to record.
             category: A short category label for the record. Defaults to
                 ``"ERROR"``.
         """
+        if self._diagnostic_log_path is None:
+            return
+
         timestamp = datetime.now().isoformat()
         # Normalize whitespace that would corrupt the tab-separated, one-record-
         # per-line format.
@@ -601,10 +607,7 @@ class IndexingMonitor:
             if not snapshot.log_filter.matches(line.text):
                 return write_enabled
 
-            # Matched: show the line with its original receive timestamp (4.5).
-            display.show_log_line(line)
-
-            # Optionally persist the same line object (received_at intact, 7.3).
+            # Optionally persist the line object (received_at intact, 7.3).
             if write_enabled and self._log_writer is not None:
                 try:
                     self._log_writer.write(line)
@@ -615,7 +618,11 @@ class IndexingMonitor:
 
             progress = snapshot.parser.parse(line)
             if progress is not None:
+                # Show only the progress summary, not the raw log line.
                 display.update_progress(progress)
+            else:
+                # No progress extracted: show the raw line.
+                display.show_log_line(line)
         except Exception as exc:  # pragma: no cover - defensive, non-fatal
             self.log_diagnostic(
                 f"处理日志行时发生异常: {exc}", category="PIPELINE"
