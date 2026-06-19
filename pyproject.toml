@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spotlight-monitor"
+version = "0.1.0"
+description = "Read an iPhone's live system log over USB and surface Spotlight indexing progress on Windows."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "iphone-status-track" }]
+keywords = ["ios", "spotlight", "indexing", "libimobiledevice", "syslog", "windows"]
+
+# Runtime has no third-party dependencies; it shells out to libimobiledevice
+# executables (idevice_id / ideviceinfo / idevicesyslog) and uses only the
+# Python standard library.
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+]
+build = [
+    "pyinstaller>=6.0",
+]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "pyinstaller>=6.0",
+]
+
+# PyInstaller-compatible CLI entry point. `spotlight-monitor` resolves to
+# spotlight_monitor.cli:main, which is also the build target for a Windows
+# executable: `pyinstaller --onefile --name spotlight-monitor
+# src/spotlight_monitor/__main__.py` (or the generated console script).
+[project.scripts]
+spotlight-monitor = "spotlight_monitor.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.hypothesis]
+max_examples = 100

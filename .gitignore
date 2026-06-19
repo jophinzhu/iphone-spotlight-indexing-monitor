@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+
+# Testing
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+
+# Tool output
+spotlight_monitor_diagnostic.log
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
