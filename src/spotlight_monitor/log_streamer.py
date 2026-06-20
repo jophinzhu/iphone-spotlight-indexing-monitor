@@ -46,6 +46,7 @@ from datetime import datetime
 from queue import Queue
 from typing import Callable, Protocol, runtime_checkable
 
+from ._paths import get_bundled_env, get_executable
 from .models import RawLogLine, StreamEvent
 
 __all__ = ["ProcessLike", "ProcessFactory", "LogStreamer"]
@@ -90,6 +91,7 @@ def _default_process_factory(cmd: list[str]) -> ProcessLike:
         bufsize=1,
         encoding="utf-8",
         errors="replace",
+        env=get_bundled_env(),
     )
 
 
@@ -98,7 +100,7 @@ class LogStreamer:
 
     def __init__(
         self,
-        executable: str = "idevicesyslog",
+        executable: str | None = None,
         process_factory: ProcessFactory | None = None,
         *,
         terminate_timeout_s: float = 5.0,
@@ -107,8 +109,8 @@ class LogStreamer:
         """Create a streamer.
 
         Args:
-            executable: Path/name of the ``idevicesyslog`` binary (default
-                ``"idevicesyslog"``, resolved via PATH).
+            executable: Path/name of the ``idevicesyslog`` binary. Defaults to
+                the bundled path or bare name resolved via PATH.
             process_factory: Callable building a :class:`ProcessLike` from an
                 argv list. Defaults to :func:`subprocess.Popen`. Injectable for
                 testing.
@@ -117,7 +119,7 @@ class LogStreamer:
             join_timeout_s: How long :meth:`stop` waits for the reader thread to
                 finish.
         """
-        self._executable = executable
+        self._executable = executable or get_executable("idevicesyslog")
         self._process_factory: ProcessFactory = (
             process_factory if process_factory is not None else _default_process_factory
         )

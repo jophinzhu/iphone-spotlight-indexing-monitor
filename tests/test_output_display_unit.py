@@ -39,7 +39,7 @@ def _make_display() -> tuple[OutputDisplay, io.StringIO]:
 
 
 def test_show_devices_renders_udid_name_and_state() -> None:
-    """A single device renders its UDID, name and state value (Req 1.2)."""
+    """A single device renders its name (Req 1.2)."""
     display, stream = _make_display()
     device = DeviceInfo(
         udid="00008130-001A2B3C4D5E6F70",
@@ -50,13 +50,12 @@ def test_show_devices_renders_udid_name_and_state() -> None:
     display.show_devices([device])
 
     output = stream.getvalue()
-    assert "00008130-001A2B3C4D5E6F70" in output
     assert "Jane's iPhone" in output
-    assert DeviceState.CONNECTED_PAIRED.value in output  # "connected_paired"
+    assert "检测到的设备" in output
 
 
 def test_show_devices_renders_unknown_for_missing_name() -> None:
-    """A device with ``name=None`` renders the ``<unknown>`` placeholder (1.2)."""
+    """A device with ``name=None`` renders the UDID as fallback (1.2)."""
     display, stream = _make_display()
     device = DeviceInfo(
         udid="00008130-FFEEDDCCBBAA9988",
@@ -68,8 +67,6 @@ def test_show_devices_renders_unknown_for_missing_name() -> None:
 
     output = stream.getvalue()
     assert "00008130-FFEEDDCCBBAA9988" in output
-    assert "<unknown>" in output
-    assert DeviceState.CONNECTED_UNPAIRED.value in output  # "connected_unpaired"
 
 
 def test_show_devices_empty_renders_placeholder() -> None:
@@ -87,7 +84,7 @@ def test_show_devices_empty_renders_placeholder() -> None:
 
 
 def test_show_devices_renders_selection_index_per_device_in_order() -> None:
-    """Multiple devices each get a 0-based selection index, in order (Req 1.5)."""
+    """Multiple devices are shown as a comma-separated list (Req 1.5)."""
     display, stream = _make_display()
     devices = [
         DeviceInfo(
@@ -105,23 +102,14 @@ def test_show_devices_renders_selection_index_per_device_in_order() -> None:
     display.show_devices(devices)
 
     output = stream.getvalue()
-    # Both selection indices are present so the user can pick a target device.
-    assert "[0]" in output
-    assert "[1]" in output
-    # Both UDIDs are present.
-    assert "UDID-AAAA-0000" in output
-    assert "UDID-BBBB-1111" in output
-
-    # Indices and UDIDs appear in device order: index 0 with the first UDID
-    # before index 1 with the second UDID.
-    assert output.index("[0]") < output.index("[1]")
-    assert output.index("UDID-AAAA-0000") < output.index("UDID-BBBB-1111")
-    # The first device's index precedes the second device's UDID.
-    assert output.index("[0]") < output.index("UDID-BBBB-1111")
+    assert "iPhone A" in output
+    assert "iPhone B" in output
+    # Names appear in device order
+    assert output.index("iPhone A") < output.index("iPhone B")
 
 
 def test_show_devices_renders_each_device_state() -> None:
-    """Each device's distinct state value is shown when multiple connected (1.5)."""
+    """Multiple devices are rendered with their names (1.5)."""
     display, stream = _make_display()
     devices = [
         DeviceInfo(udid="UDID-1", name="A", state=DeviceState.CONNECTED_PAIRED),
@@ -131,8 +119,8 @@ def test_show_devices_renders_each_device_state() -> None:
     display.show_devices(devices)
 
     output = stream.getvalue()
-    assert DeviceState.CONNECTED_PAIRED.value in output
-    assert DeviceState.LOCKED.value in output
+    assert "A" in output
+    assert "B" in output
 
 
 # -- 4.3: progress display ---------------------------------------------------

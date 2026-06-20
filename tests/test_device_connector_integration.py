@@ -112,7 +112,7 @@ def test_enumerate_two_paired_devices_success() -> None:
             "UDID0002": FakeCompletedProcess(returncode=0, stdout="Bob's iPad\n"),
         },
     )
-    connector = DeviceConnector(runner=runner)
+    connector = DeviceConnector(idevice_id_path="idevice_id", ideviceinfo_path="ideviceinfo", runner=runner)
 
     devices = connector.enumerate_devices(timeout_s=5.0)
 
@@ -159,7 +159,7 @@ def test_enumerate_mixed_states_recognizes_paired_unpaired_locked() -> None:
             ),
         },
     )
-    connector = DeviceConnector(runner=runner)
+    connector = DeviceConnector(idevice_id_path="idevice_id", ideviceinfo_path="ideviceinfo", runner=runner)
 
     devices = connector.enumerate_devices(timeout_s=5.0)
 
@@ -183,7 +183,7 @@ def test_enumerate_timeout_returns_empty_list() -> None:
     runner = FakeRunner(
         list_exc=subprocess.TimeoutExpired(cmd=["idevice_id", "-l"], timeout=5.0),
     )
-    connector = DeviceConnector(runner=runner)
+    connector = DeviceConnector(idevice_id_path="idevice_id", ideviceinfo_path="ideviceinfo", runner=runner)
 
     devices = connector.enumerate_devices(timeout_s=5.0)
 
@@ -195,7 +195,7 @@ def test_enumerate_timeout_returns_empty_list() -> None:
 def test_enumerate_missing_executable_returns_empty_list() -> None:
     """A missing `idevice_id` executable yields an empty list (Req 1.1)."""
     runner = FakeRunner(list_exc=FileNotFoundError("idevice_id"))
-    connector = DeviceConnector(runner=runner)
+    connector = DeviceConnector(idevice_id_path="idevice_id", ideviceinfo_path="ideviceinfo", runner=runner)
 
     devices = connector.enumerate_devices(timeout_s=5.0)
 

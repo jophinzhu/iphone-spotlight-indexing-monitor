@@ -45,6 +45,7 @@ from .models import (
 )
 from .output_display import OutputDisplay
 from .progress_parser import ProgressParser
+from ._paths import get_executable
 
 __all__ = [
     "IndexingMonitor",
@@ -207,34 +208,26 @@ class IndexingMonitor:
 
         Resolves each required libimobiledevice executable via the injected
         ``which`` callable (:func:`shutil.which` by default). For every
-        executable that cannot be found on ``PATH`` a human-readable error
-        string is produced that names the missing item and includes fix
-        guidance (Req 6.2).
+        executable that cannot be found a human-readable error string is
+        produced that names the missing item and includes fix guidance (Req 6.2).
 
         Returns:
             A list of error messages, one per missing dependency. An **empty
             list** means every dependency is present and startup may proceed
             (Req 6.1). A non-empty list means startup should be aborted and the
             messages shown to the user.
-
-        Notes:
-            On Windows, live syslog capture also relies on the Apple Mobile
-            Device USB driver (installed with iTunes / the Apple Devices app).
-            That driver cannot be verified reliably from Python, so this check
-            focuses on the executables. When any executable is missing we append
-            a single best-effort note reminding the user to also ensure the USB
-            driver is installed; this keeps the check pragmatic without
-            producing false negatives when the driver is actually present.
         """
         errors: list[str] = []
         for exe in self._required_executables:
+            # Check bundled path first, then fall back to system PATH via which
+            resolved = get_executable(exe)
+            if resolved != exe:
+                # Found in bundled directory — dependency satisfied
+                continue
             if self._which(exe) is None:
                 errors.append(f"缺少可执行文件 {exe}：{_FIX_GUIDANCE}")
 
         if errors:
-            # Best-effort USB driver guidance: we cannot positively detect the
-            # Apple Mobile Device USB driver, so only surface this hint when
-            # something is already missing (avoids false negatives).
             errors.append(
                 "另请确认已安装 Apple Mobile Device USB 驱动"
                 "（随 iTunes / Apple Devices 安装），否则无法经 USB 读取设备日志"

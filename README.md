@@ -7,10 +7,15 @@ replacing the Mac-only Console.app workflow.
 
 ## Requirements
 
-- iTunes
-- Python 3.11+
-- [libimobiledevice](https://libimobiledevice.org/) executables on `PATH`
-  (`idevice_id`, `ideviceinfo`, `idevicesyslog`) and a working USB driver.
+- Windows 10/11
+- [iTunes](https://www.apple.com/itunes/) or Apple Devices app (for the USB driver)
+
+The libimobiledevice tools and Python runtime are bundled — no separate installation needed.
+
+## Usage
+
+Download `spotlight-monitor.exe` from the [Releases](../../releases) page, connect
+your iPhone via USB, and double-click the exe.
 
 ## Development
 
@@ -21,7 +26,7 @@ pip install -e .[dev]
 pytest
 ```
 
-## Run
+## Run from source
 
 ```cmd
 python -m spotlight_monitor
@@ -31,15 +36,5 @@ python -m spotlight_monitor
 
 ```cmd
 pip install -e .[build]
-pyinstaller --onefile --name spotlight-monitor src\spotlight_monitor\__main__.py
-```
-
-## Project layout
-
-```
-src/spotlight_monitor/   package source
-  models.py              core immutable data models and enums
-  cli.py                 CLI / PyInstaller entry point (main)
-  __main__.py            python -m spotlight_monitor
-tests/                   unit and property-based tests
+pyinstaller --onefile --name spotlight-monitor --paths src --add-data "vendor/libimobiledevice;libimobiledevice" src/spotlight_monitor/__main__.py
 ```

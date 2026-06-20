@@ -24,7 +24,7 @@ jobs:
         run: pip install "pyinstaller>=6.0"
 
       - name: Build executable
-        run: pyinstaller --onefile --name spotlight-monitor --paths src src/spotlight_monitor/__main__.py
+        run: pyinstaller --onefile --name spotlight-monitor --paths src --add-data "vendor/libimobiledevice;libimobiledevice" src/spotlight_monitor/__main__.py
 
       - name: Verify executable
         run: echo "" | dist\spotlight-monitor.exe --version

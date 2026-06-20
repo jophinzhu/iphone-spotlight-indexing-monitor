@@ -37,6 +37,7 @@ from __future__ import annotations
 import subprocess
 from typing import Protocol
 
+from ._paths import get_bundled_env, get_executable
 from .models import DeviceInfo, DeviceState
 
 __all__ = ["DeviceConnector", "classify_state", "CompletedProcessLike", "Runner"]
@@ -78,6 +79,7 @@ def _default_runner(cmd: list[str], timeout: float) -> CompletedProcessLike:
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=get_bundled_env(),
     )
 
 
@@ -150,24 +152,24 @@ class DeviceConnector:
 
     def __init__(
         self,
-        idevice_id_path: str = "idevice_id",
-        ideviceinfo_path: str = "ideviceinfo",
+        idevice_id_path: str | None = None,
+        ideviceinfo_path: str | None = None,
         runner: Runner | None = None,
     ) -> None:
         """Create a connector.
 
         Args:
             idevice_id_path: Path to (or bare name of) the ``idevice_id``
-                executable. Defaults to the bare name, resolved on ``PATH``.
+                executable. Defaults to the bundled path or bare name on PATH.
             ideviceinfo_path: Path to (or bare name of) the ``ideviceinfo``
-                executable. Defaults to the bare name, resolved on ``PATH``.
+                executable. Defaults to the bundled path or bare name on PATH.
             runner: Optional injectable command runner used for every
                 subprocess call. Defaults to :func:`_default_runner` (which
                 wraps :func:`subprocess.run`). Tests can supply a fake to avoid
                 touching real hardware.
         """
-        self._idevice_id_path = idevice_id_path
-        self._ideviceinfo_path = ideviceinfo_path
+        self._idevice_id_path = idevice_id_path or get_executable("idevice_id")
+        self._ideviceinfo_path = ideviceinfo_path or get_executable("ideviceinfo")
         self._runner: Runner = runner if runner is not None else _default_runner
 
     def enumerate_devices(self, timeout_s: float = 5.0) -> list[DeviceInfo]:

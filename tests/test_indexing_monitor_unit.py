@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from unittest.mock import patch
 
 from spotlight_monitor.indexing_monitor import (
     DEFAULT_REQUIRED_EXECUTABLES,
@@ -66,9 +67,10 @@ def test_check_dependencies_reports_each_missing_executable_with_guidance() -> N
     """Every missing executable is named and accompanied by fix guidance (6.2)."""
     # Only ``idevice_id`` is present; the other two are missing.
     which = _make_which({"idevice_id"})
-    monitor = IndexingMonitor(which=which)
-
-    errors = monitor.check_dependencies()
+    # Patch get_executable to return bare names (simulating no bundled dir)
+    with patch("spotlight_monitor.indexing_monitor.get_executable", side_effect=lambda x: x):
+        monitor = IndexingMonitor(which=which)
+        errors = monitor.check_dependencies()
 
     assert errors  # non-empty: startup should abort
     joined = "\n".join(errors)
@@ -87,9 +89,9 @@ def test_check_dependencies_reports_each_missing_executable_with_guidance() -> N
 def test_check_dependencies_all_missing_names_all_and_adds_usb_driver_note() -> None:
     """When all executables are missing, each is named plus a USB-driver hint (6.2)."""
     which = _make_which(set())  # nothing on PATH
-    monitor = IndexingMonitor(which=which)
-
-    errors = monitor.check_dependencies()
+    with patch("spotlight_monitor.indexing_monitor.get_executable", side_effect=lambda x: x):
+        monitor = IndexingMonitor(which=which)
+        errors = monitor.check_dependencies()
 
     joined = "\n".join(errors)
     for exe in DEFAULT_REQUIRED_EXECUTABLES:

@@ -18,6 +18,7 @@ from __future__ import annotations
 import threading
 from datetime import datetime, timedelta
 from queue import Queue
+from unittest.mock import patch
 
 from spotlight_monitor.indexing_monitor import (
     EXIT_DEVICE_NOT_READY,
@@ -125,15 +126,16 @@ def _present(which):
 def test_run_aborts_when_dependencies_missing(tmp_path):
     """Missing executables abort startup with EXIT_MISSING_DEPENDENCIES (6.2)."""
     display = FakeDisplay()
-    monitor = IndexingMonitor(
-        which=lambda name: None,  # everything missing
-        diagnostic_log_path=tmp_path / "diag.log",
-        output_display=display,
-        device_connector=FakeConnector([]),
-        log_streamer=FakeStreamer([]),
-    )
+    with patch("spotlight_monitor.indexing_monitor.get_executable", side_effect=lambda x: x):
+        monitor = IndexingMonitor(
+            which=lambda name: None,  # everything missing
+            diagnostic_log_path=tmp_path / "diag.log",
+            output_display=display,
+            device_connector=FakeConnector([]),
+            log_streamer=FakeStreamer([]),
+        )
 
-    code = monitor.run(device_wait_s=0.0)
+        code = monitor.run(device_wait_s=0.0)
 
     assert code == EXIT_MISSING_DEPENDENCIES
     assert display.errors  # missing items were shown
